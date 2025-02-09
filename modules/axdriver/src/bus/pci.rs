@@ -35,7 +35,6 @@ fn config_pci_device(
                 }
             }
         }
-
         // read the BAR info again after assignment.
         let info = root.bar_info(bdf, bar).unwrap();
         match info {
@@ -72,7 +71,6 @@ fn config_pci_device(
             bar += 1;
         }
     }
-
     // Enable the device.
     let (_status, cmd) = root.get_status_command(bdf);
     root.set_command(
