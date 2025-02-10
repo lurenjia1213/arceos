@@ -112,7 +112,7 @@ make ARCH=loongarch64 LOG=debug A=examples/helloworld FEATURES=page-alloc-4g run
 
 Where `path/to/app` is the relative path to the application. Examples applications can be found in the [examples](examples/) directory or the [arceos-apps](https://github.com/arceos-org/arceos-apps) repository.
 
-`<arch>` should be one of `riscv64`, `aarch64`, `x86_64`.
+`<arch>` should be one of `riscv64`, `aarch64`, `x86_64`, `loongarch64`.
 
 `<log>` should be one of `off`, `error`, `warn`, `info`, `debug`, `trace`.
 
