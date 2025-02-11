@@ -1,13 +1,12 @@
 mod boot;
 
 use crate::mem::phys_to_virt;
-use memory_addr::PhysAddr;
 use kspin::SpinNoIrq;
+use memory_addr::PhysAddr;
 
 const UART_BASE: PhysAddr = pa!(axconfig::devices::UART_PADDR);
 
-static UART: SpinNoIrq<LAUart> =
-    SpinNoIrq::new(LAUart::new(phys_to_virt(UART_BASE).as_mut_ptr()));
+static UART: SpinNoIrq<LAUart> = SpinNoIrq::new(LAUart::new(phys_to_virt(UART_BASE).as_mut_ptr()));
 
 pub struct LAUart {
     base_address: *mut u8,
@@ -73,12 +72,14 @@ pub mod console {
 pub mod misc {
     /// Shutdown the whole system, including all CPUs.
     pub fn terminate() -> ! {
+        use crate::mem::phys_to_virt;
         info!("Shutting down...");
-        crate::arch::halt();
-        warn!("It should shutdown!");
-        loop {
-            crate::arch::halt();
+        unsafe {
+            phys_to_virt(pa!(axconfig::devices::GED_PADDR))
+                .as_mut_ptr()
+                .write_volatile(0x34);
         }
+        loop {}
     }
 }
 
@@ -114,7 +115,7 @@ pub mod time {
     /// Set a one-shot timer.
     ///
     /// A timer interrupt will be triggered at the specified monotonic time deadline (in nanoseconds).
-    pub fn set_oneshot_timer(deadline_ns: u64) {}
+    pub fn set_oneshot_timer(_deadline_ns: u64) {}
 
     /// Return epoch offset in nanoseconds (wall time offset to monotonic clock start).
     pub fn epochoffset_nanos() -> u64 {

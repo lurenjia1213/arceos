@@ -12,11 +12,11 @@ platform = "loongarch64-qemu-virt"
 family = "loongarch64-qemu-virt"
 
 # Base address of the whole physical memory.
-phys-memory-base = 0x9000_0000        # uint
+phys-memory-base = 0x8000_0000        # uint
 # Size of the whole physical memory.
 phys-memory-size = 0x800_0000         # uint
 # Base physical address of the kernel image.
-kernel-base-paddr = 0x9000_0000       # uint
+kernel-base-paddr = 0x8000_0000       # uint
 # # Base virtual address of the kernel image.
 # kernel-base-vaddr = "0x9000_0000_9000_0000"       # uint
 # # Linear mapping offset, for quick conversions between physical and virtual
@@ -44,7 +44,7 @@ kernel-base-paddr = 0x9000_0000       # uint
 # kernel-aspace-size = "0x0000_003f_ffff_f000"    # uint
 
 # Base virtual address of the kernel image.
-kernel-base-vaddr = "0xffff_0000_9000_0000"     # uint
+kernel-base-vaddr = "0xffff_0000_8000_0000"     # uint
 # Linear mapping offset, for quick conversions between physical and virtual
 # addresses.
 phys-virt-offset = "0xffff_0000_0000_0000"      # uint
@@ -62,9 +62,10 @@ kernel-aspace-size = "0x0000_ffff_ffff_f000"    # uint
 [devices]
 # MMIO regions with format (`base_paddr`, `size`).
 mmio-regions = [
-    [0x2000_0000, 0x1000_0000],         # PCI
+    [0x100E_0000, 0x0000_1000],         # GED DEVICE
     [0x1FE0_0000, 0x0000_1000],         # UART
-    [0x4000_0000, 0x0002_0000]
+    [0x2000_0000, 0x1000_0000],         # PCI
+    [0x4000_0000, 0x0002_0000],         # PCI DEVICE
 ]           # [(uint, uint)]
 # VirtIO MMIO regions with format (`base_paddr`, `size`).
 virtio-mmio-regions = []    # [(uint, uint)]
@@ -79,3 +80,4 @@ pci-ranges = [
 ]             # [(uint, uint)]
 
 uart-paddr = 0x1FE001E0        # uint
+ged-paddr = 0x100e001c
