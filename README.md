@@ -12,8 +12,8 @@ ArceOS was inspired a lot by [Unikraft](https://github.com/unikraft/unikraft).
 
 ## Features & TODOs
 
-* [x] Architecture: x86_64, riscv64, aarch64
-* [x] Platform: QEMU pc-q35 (x86_64), virt (riscv64/aarch64)
+* [x] Architecture: x86_64, riscv64, aarch64, loongarch64
+* [x] Platform: QEMU pc-q35 (x86_64), virt (riscv64/aarch64/loongarch64)
 * [x] Multi-thread
 * [x] FIFO/RR/CFS scheduler
 * [x] VirtIO net/blk/gpu drivers
@@ -89,15 +89,30 @@ export PATH=`pwd`/x86_64-linux-musl-cross/bin:`pwd`/aarch64-linux-musl-cross/bin
 Other systems and arch please refer to [Qemu Download](https://www.qemu.org/download/#linux)
 
 #### 2. Build & Run
-
+##### quick run
 ```bash
-# build app in arceos directory
-make A=path/to/app ARCH=<arch> LOG=<log>
+# cd arceos directory
+cd arceos
+# build&run app  in arceos directory
+# clean everything
+make clean
+# Example Pattern: make ARCH=<arch>  LOG=<log> A=path/to/app FEATURES=...  run
+# riscv64 example
+make ARCH=riscv64 LOG=debug A=examples/helloworld FEATURES=page-alloc-4g run
+# x86_64 example
+make clean
+make ARCH=x86_64 LOG=debug A=examples/helloworld FEATURES=page-alloc-4g run
+# aarch64 example
+make clean
+make ARCH=aarch64 LOG=debug A=examples/helloworld FEATURES=page-alloc-4g run
+# loongarch64 example, use 'Ctrl a+x' to quit QEMU
+make clean
+make ARCH=loongarch64 LOG=debug A=examples/helloworld FEATURES=page-alloc-4g run
 ```
 
 Where `path/to/app` is the relative path to the application. Examples applications can be found in the [examples](examples/) directory or the [arceos-apps](https://github.com/arceos-org/arceos-apps) repository.
 
-`<arch>` should be one of `riscv64`, `aarch64`, `x86_64`.
+`<arch>` should be one of `riscv64`, `aarch64`, `x86_64`, `loongarch64`.
 
 `<log>` should be one of `off`, `error`, `warn`, `info`, `debug`, `trace`.
 
