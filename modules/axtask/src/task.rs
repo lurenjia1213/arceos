@@ -23,7 +23,7 @@ pub struct TaskId(u64);
 /// The possible states of a task.
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub(crate) enum TaskState {
+pub enum TaskState {
     /// Task is running on some CPU.
     Running = 1,
     /// Task is ready to run on some scheduler's ready queue.
@@ -38,7 +38,7 @@ pub(crate) enum TaskState {
 /// The inner task structure.
 pub struct TaskInner {
     id: TaskId,
-    name: String,
+    name: UnsafeCell<String>,
     is_idle: bool,
     is_init: bool,
 
@@ -123,7 +123,7 @@ impl TaskInner {
         t.entry = Some(Box::into_raw(Box::new(entry)));
         t.ctx_mut().init(task_entry as usize, kstack.top(), tls);
         t.kstack = Some(kstack);
-        if t.name == "idle" {
+        if t.name() == "idle" {
             t.is_idle = true;
         }
         t
@@ -136,7 +136,14 @@ impl TaskInner {
 
     /// Gets the name of the task.
     pub fn name(&self) -> &str {
-        self.name.as_str()
+        unsafe { (*self.name.get()).as_str() }
+    }
+
+    /// Set the name of the task.
+    pub fn set_name(&self, name: &str) {
+        unsafe {
+            *self.name.get() = String::from(name);
+        }
     }
 
     /// Get a combined string of the task ID and name.
@@ -209,6 +216,18 @@ impl TaskInner {
     pub fn set_cpumask(&self, cpumask: AxCpuMask) {
         *self.cpumask.lock() = cpumask
     }
+
+    #[inline]
+    pub fn get_kernel_stack_top(&self) -> Option<usize> {
+        if let Some(kstack) = &self.kstack {
+            return Some(kstack.top().as_usize());
+        }
+        None
+    }
+
+    pub fn exit_code(&self) -> i32 {
+        self.exit_code.load(Ordering::Acquire)
+    }
 }
 
 // private methods
@@ -216,7 +235,7 @@ impl TaskInner {
     fn new_common(id: TaskId, name: String) -> Self {
         Self {
             id,
-            name,
+            name: UnsafeCell::new(name),
             is_idle: false,
             is_init: false,
             entry: None,
@@ -255,7 +274,7 @@ impl TaskInner {
         t.is_init = true;
         #[cfg(feature = "smp")]
         t.set_on_cpu(true);
-        if t.name == "idle" {
+        if t.name() == "idle" {
             t.is_idle = true;
         }
         t
@@ -266,12 +285,12 @@ impl TaskInner {
     }
 
     #[inline]
-    pub(crate) fn state(&self) -> TaskState {
+    pub fn state(&self) -> TaskState {
         self.state.load(Ordering::Acquire).into()
     }
 
     #[inline]
-    pub(crate) fn set_state(&self, state: TaskState) {
+    pub fn set_state(&self, state: TaskState) {
         self.state.store(state as u8, Ordering::Release)
     }
 

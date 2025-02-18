@@ -17,7 +17,7 @@ repository = "https://github.com/arceos-org/arceos/tree/main/api/arceos_posix_ap
 documentation = "https://arceos-org.github.io/arceos/arceos_posix_api/index.html"
 
 [features]
-default = []
+default = ["fd"]
 
 smp = ["axfeat/smp"]
 irq = ["axfeat/irq"]
