@@ -25,6 +25,8 @@ virtio-blk = ["block", "virtio", "axdriver_virtio/block"]
 virtio-net = ["net", "virtio", "axdriver_virtio/net"]
 virtio-gpu = ["display", "virtio", "axdriver_virtio/gpu"]
 ramdisk = ["block", "axdriver_block/ramdisk"]
+# Build ramdisk from a existing image
+ramdisk-img = ["ramdisk"]
 bcm2835-sdhci = ["block", "axdriver_block/bcm2835-sdhci"]
 ixgbe = ["net", "axdriver_net/ixgbe", "dep:axalloc", "dep:axhal", "dep:axdma"]
 # more devices example: e1000 = ["net", "axdriver_net/e1000"]

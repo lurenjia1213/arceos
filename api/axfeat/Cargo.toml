@@ -56,6 +56,7 @@ rtc = ["axhal/rtc", "axruntime/rtc"]
 bus-mmio = ["axdriver?/bus-mmio"]
 bus-pci = ["axdriver?/bus-pci"]
 driver-ramdisk = ["axdriver?/ramdisk", "axfs?/use-ramdisk"]
+driver-ramdisk-img = ["axdriver?/ramdisk-img"]
 driver-ixgbe = ["axdriver?/ixgbe"]
 driver-bcm2835-sdhci = ["axdriver?/bcm2835-sdhci"]
 

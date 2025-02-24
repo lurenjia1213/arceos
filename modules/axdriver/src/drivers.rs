@@ -58,6 +58,14 @@ cfg_if::cfg_if! {
 
         impl DriverProbe for RamDiskDriver {
             fn probe_global() -> Option<AxDeviceEnum> {
+                #[cfg(feature = "ramdisk-img")]
+                {
+                    static RAMDISK_IMG: &'static [u8] = include_bytes!("../../../disk.img");
+                    Some(AxDeviceEnum::from_block(
+                        axdriver_block::ramdisk::RamDisk::from(RAMDISK_IMG)
+                    ))
+                }
+                #[cfg(not(feature = "ramdisk-img"))]
                 // TODO: format RAM disk
                 Some(AxDeviceEnum::from_block(
                     axdriver_block::ramdisk::RamDisk::new(0x100_0000), // 16 MiB
