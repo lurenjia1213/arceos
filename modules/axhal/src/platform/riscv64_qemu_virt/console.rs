@@ -52,7 +52,34 @@ pub fn write_bytes(bytes: &[u8]) {
 
 /// Reads bytes from the console into the given mutable slice.
 /// Returns the number of bytes read.
+// pub fn read_bytes(bytes: &mut [u8]) -> usize {
+//     sbi_rt::console_read(sbi_rt::Physical::new(
+//         bytes.len().min(MAX_RW_SIZE),
+//         virt_to_phys(VirtAddr::from_mut_ptr_of(bytes.as_mut_ptr())).as_usize(),
+//         0,
+//     ))
+//     .value
+// }
 pub fn read_bytes(bytes: &mut [u8]) -> usize {
+    // If the address is from userspace, we need to use a kernel buffer
+    #[cfg(feature = "uspace")]
+    if bytes.as_ptr() as usize & (1 << 63) == 0 {
+        let mut total_read = 0;
+        while total_read < bytes.len() {
+            let chunk_size = (bytes.len() - total_read).min(MAX_RW_SIZE);
+            let mut kernel_buf = [0u8; MAX_RW_SIZE];
+            let read_len = sbi_rt::console_read(sbi_rt::Physical::new(
+                chunk_size,
+                virt_to_phys(VirtAddr::from_mut_ptr_of(kernel_buf.as_mut_ptr())).as_usize(),
+                0,
+            )).value.min(chunk_size); // 防御性截断
+            if read_len == 0 { break; } // 无更多数据
+            bytes[total_read..total_read + read_len].copy_from_slice(&kernel_buf[..read_len]);
+            total_read += read_len;
+        }
+        return total_read;
+    }    
+    // Direct read for kernel-space buffers
     sbi_rt::console_read(sbi_rt::Physical::new(
         bytes.len().min(MAX_RW_SIZE),
         virt_to_phys(VirtAddr::from_mut_ptr_of(bytes.as_mut_ptr())).as_usize(),
