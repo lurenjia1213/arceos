@@ -77,3 +77,26 @@ pub unsafe fn sys_writev(fd: c_int, iov: *const ctypes::iovec, iocnt: c_int) -> 
         Ok(ret)
     })
 }
+/// Read a vector.
+pub unsafe fn sys_readv(fd: c_int, iov: *const ctypes::iovec, iocnt: c_int) -> ctypes::ssize_t {
+    debug!("sys_writev <= fd: {}", fd);
+    syscall_body!(sys_writev, {
+        if !(0..=1024).contains(&iocnt) {
+            return Err(LinuxError::EINVAL);
+        }
+
+        let iovs = unsafe { core::slice::from_raw_parts(iov, iocnt as usize) };
+
+        let mut ret = 0;
+        for iov in iovs.iter() {
+            let result = sys_read(fd, iov.iov_base, iov.iov_len);
+            ret += result;
+
+            if result < iov.iov_len as isize {
+                break;
+            }
+        }
+
+        Ok(ret)
+    })
+}
