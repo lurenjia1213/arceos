@@ -1,6 +1,6 @@
 use crate::ctypes;
 use axerrno::{LinuxError, LinuxResult};
-use core::ffi::{c_int, c_void};
+use core::ffi::{c_int, c_void,c_uint,c_ulong};
 
 #[cfg(feature = "fd")]
 use crate::imp::fd_ops::get_file_like;
@@ -99,4 +99,109 @@ pub unsafe fn sys_readv(fd: c_int, iov: *const ctypes::iovec, iocnt: c_int) -> c
 
         Ok(ret)
     })
+}
+use num_enum::TryFromPrimitive;
+pub unsafe fn sys_ioctl(fd: c_int,cmd: c_uint,arg:c_ulong)-> ctypes::ssize_t{
+    debug!("ioctl");
+    syscall_body!(sys_ioctl, {
+
+        let cmd = match IoctlCmd::try_from(cmd) {
+            Ok(cmd) => cmd,  
+            Err(_) => {
+                return Err(LinuxError::EINVAL);
+                
+            }
+        };
+
+        debug!(
+            "fd = {}, ioctl_cmd = {:?}, arg = 0x{:x}",
+            fd, cmd, arg
+        );
+        
+        
+        let mut file =get_file_like(fd)?;
+
+
+        let ret = match cmd {
+            IoctlCmd::FIONBIO => {
+                //设置文件的非阻塞模式（O_NONBLOCK）。
+                file.set_nonblocking(arg & (ctypes::O_NONBLOCK as u64) > 0)?;//服了，这样也不是不行
+                0
+            }
+            IoctlCmd::FIOASYNC => {
+                //信号机制未完善
+                0
+            }
+            IoctlCmd::FIOCLEX => {
+                //设置文件的 close-on-exec 标志（CLOEXEC）。
+
+                0
+            }
+            IoctlCmd::FIONCLEX => {
+                // Clears the close-on-exec flag of the file.
+                // Follow the implementation of fcntl()
+                0
+            }
+            // FIXME: ioctl operations involving blocking I/O should be able to restart if interrupted
+            _ => {
+                // let file_owned = file.to_owned();
+                // We have to drop `file_table` because some I/O command will modify the file table
+                // (e.g., TIOCGPTPEER).
+                // drop(file_table);
+    
+                // file_owned.ioctl(ioctl_cmd, arg)?
+                0
+            }
+        };
+
+        //文件系统相关，看fs
+
+        //这样
+
+
+        Ok(ret)
+    })
+}
+
+// /tools/include/uapi/asm-generic/ioctls.h
+//参考星绽
+#[repr(u32)]
+#[derive(Debug, Clone, Copy,TryFromPrimitive)]
+pub enum IoctlCmd {
+    /// Get terminal attributes
+    TCGETS = 0x5401,
+    TCSETS = 0x5402,
+    /// Drain the output buffer and set attributes
+    TCSETSW = 0x5403,
+    /// Drain the output buffer, and discard pending input, and set attributes
+    TCSETSF = 0x5404,
+    /// Make the given terminal the controlling terminal of the calling process.
+    TIOCSCTTY = 0x540e,
+    /// Get the process group ID of the foreground process group on this terminal
+    TIOCGPGRP = 0x540f,
+    /// Set the foreground process group ID of this terminal.
+    TIOCSPGRP = 0x5410,
+    /// Get the number of bytes in the input buffer.
+    FIONREAD = 0x541B,
+    /// Set window size
+    TIOCGWINSZ = 0x5413,
+    TIOCSWINSZ = 0x5414,
+    /// Enable or disable non-blocking I/O mode.
+    FIONBIO = 0x5421,
+    /// the calling process gives up this controlling terminal
+    TIOCNOTTY = 0x5422,
+    /// Clear the close on exec flag on a file descriptor
+    FIONCLEX = 0x5450,
+    /// Set the close on exec flag on a file descriptor
+    FIOCLEX = 0x5451,
+    /// Enable or disable asynchronous I/O mode.
+    FIOASYNC = 0x5452,
+    /// Get Pty Number
+    TIOCGPTN = 0x80045430,
+    /// Lock/unlock Pty
+    TIOCSPTLCK = 0x40045431,
+    /// Safely open the slave
+    TIOCGPTPEER = 0x40045441,
+    /// Get tdx report using TDCALL
+    TDXGETREPORT = 0xc4405401,
 }
