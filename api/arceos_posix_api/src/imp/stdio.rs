@@ -111,6 +111,9 @@ impl super::fd_ops::FileLike for Stdin {
     fn write(&self, _buf: &[u8]) -> LinuxResult<usize> {
         Err(LinuxError::EPERM)
     }
+    fn flush(&self) -> LinuxResult<usize> {
+        Err(LinuxError::EPERM)
+    }
 
     fn stat(&self) -> LinuxResult<crate::ctypes::stat> {
         let st_mode = 0o20000 | 0o440u32; // S_IFCHR | r--r-----
@@ -148,6 +151,10 @@ impl super::fd_ops::FileLike for Stdout {
         Ok(self.inner.lock().write(buf)?)
     }
 
+    fn flush(&self) -> LinuxResult<usize> {
+        let _ = self.inner.lock().flush();
+        Ok(0)
+    }
     fn stat(&self) -> LinuxResult<crate::ctypes::stat> {
         let st_mode = 0o20000 | 0o220u32; // S_IFCHR | -w--w----
         Ok(crate::ctypes::stat {

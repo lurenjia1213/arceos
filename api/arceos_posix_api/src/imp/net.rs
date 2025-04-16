@@ -168,6 +168,10 @@ impl FileLike for Socket {
         }
         Ok(())
     }
+    fn flush(&self) -> LinuxResult<usize> {
+        Err(LinuxError::EPERM)
+    }
+
 }
 
 impl From<SocketAddrV4> for ctypes::sockaddr_in {

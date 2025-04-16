@@ -72,13 +72,17 @@ pub fn read_bytes(bytes: &mut [u8]) -> usize {
                 chunk_size,
                 virt_to_phys(VirtAddr::from_mut_ptr_of(kernel_buf.as_mut_ptr())).as_usize(),
                 0,
-            )).value.min(chunk_size); // 防御性截断
-            if read_len == 0 { break; } // 无更多数据
+            ))
+            .value
+            .min(chunk_size); // 防御性截断
+            if read_len == 0 {
+                break;
+            } // 无更多数据
             bytes[total_read..total_read + read_len].copy_from_slice(&kernel_buf[..read_len]);
             total_read += read_len;
         }
         return total_read;
-    }    
+    }
     // Direct read for kernel-space buffers
     sbi_rt::console_read(sbi_rt::Physical::new(
         bytes.len().min(MAX_RW_SIZE),

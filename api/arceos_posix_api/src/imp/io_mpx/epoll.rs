@@ -135,6 +135,9 @@ impl FileLike for EpollInstance {
     fn set_nonblocking(&self, _nonblocking: bool) -> LinuxResult {
         Ok(())
     }
+    fn flush(&self) -> LinuxResult<usize> {
+        Err(LinuxError::EPERM)
+    }
 }
 
 /// Creates a new epoll instance.

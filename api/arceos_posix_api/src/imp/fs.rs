@@ -88,6 +88,11 @@ impl FileLike for File {
     fn set_nonblocking(&self, _nonblocking: bool) -> LinuxResult {
         Ok(())
     }
+    fn flush(&self) -> LinuxResult<usize> {
+        self.inner.lock().flush()?;
+        Ok(0)
+    }
+
 }
 
 /// Convert open flags to [`OpenOptions`].
@@ -224,6 +229,18 @@ pub fn sys_lseek(fd: c_int, offset: ctypes::off_t, whence: c_int) -> ctypes::off
         };
         let off = File::from_fd(fd)?.inner.lock().seek(pos)?;
         Ok(off)
+    })
+}
+
+/// Set the position of the file indicated by `fd`.
+///
+/// Return its position after seek.
+pub fn sys_ftruncate(fd: c_int, size:u64) -> ctypes::off_t {
+    debug!("sys_ftruncate fd:{fd},size:{size}");
+    syscall_body!(sys_ftruncate, {
+        //VFS api还是没看
+        let _ret = File::from_fd(fd)?.inner.lock().truncate(size)?;
+        Ok(0)
     })
 }
 
@@ -368,5 +385,8 @@ impl FileLike for Directory {
 
     fn set_nonblocking(&self, _nonblocking: bool) -> LinuxResult {
         Ok(())
+    }
+    fn flush(&self) -> LinuxResult<usize> {
+        Err(LinuxError::EPERM)
     }
 }

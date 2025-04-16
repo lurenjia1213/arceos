@@ -1,6 +1,6 @@
 use crate::ctypes;
 use axerrno::{LinuxError, LinuxResult};
-use core::ffi::{c_int, c_void,c_uint,c_ulong};
+use core::ffi::{c_int, c_uint, c_ulong, c_void};
 
 #[cfg(feature = "fd")]
 use crate::imp::fd_ops::get_file_like;
@@ -100,32 +100,38 @@ pub unsafe fn sys_readv(fd: c_int, iov: *const ctypes::iovec, iocnt: c_int) -> c
         Ok(ret)
     })
 }
+
+//
+pub unsafe fn sys_fsync(fd: c_int) -> ctypes::ssize_t {
+    debug!("sys_fsync  fd: {}", fd);
+    syscall_body!(sys_fsync, {
+        let file = get_file_like(fd)?;
+        //rust的这类型真挺让人头大，在某些情况下结果可能不正常
+        let _ = file.flush()?;
+        Ok(0)
+    })
+}
+
+
 use num_enum::TryFromPrimitive;
-pub unsafe fn sys_ioctl(fd: c_int,cmd: c_uint,arg:c_ulong)-> ctypes::ssize_t{
+pub unsafe fn sys_ioctl(fd: c_int, cmd: c_uint, arg: c_ulong) -> ctypes::ssize_t {
     debug!("ioctl");
     syscall_body!(sys_ioctl, {
-
         let cmd = match IoctlCmd::try_from(cmd) {
-            Ok(cmd) => cmd,  
+            Ok(cmd) => cmd,
             Err(_) => {
                 return Err(LinuxError::EINVAL);
-                
             }
         };
 
-        debug!(
-            "fd = {}, ioctl_cmd = {:?}, arg = 0x{:x}",
-            fd, cmd, arg
-        );
-        
-        
-        let mut file =get_file_like(fd)?;
+        debug!("fd = {}, ioctl_cmd = {:?}, arg = 0x{:x}", fd, cmd, arg);
 
+        let mut file = get_file_like(fd)?;
 
         let ret = match cmd {
             IoctlCmd::FIONBIO => {
                 //设置文件的非阻塞模式（O_NONBLOCK）。
-                file.set_nonblocking(arg & (ctypes::O_NONBLOCK as u64) > 0)?;//服了，这样也不是不行
+                file.set_nonblocking(arg & (ctypes::O_NONBLOCK as u64) > 0)?; //服了，这样也不是不行
                 0
             }
             IoctlCmd::FIOASYNC => {
@@ -148,7 +154,7 @@ pub unsafe fn sys_ioctl(fd: c_int,cmd: c_uint,arg:c_ulong)-> ctypes::ssize_t{
                 // We have to drop `file_table` because some I/O command will modify the file table
                 // (e.g., TIOCGPTPEER).
                 // drop(file_table);
-    
+
                 // file_owned.ioctl(ioctl_cmd, arg)?
                 0
             }
@@ -158,15 +164,16 @@ pub unsafe fn sys_ioctl(fd: c_int,cmd: c_uint,arg:c_ulong)-> ctypes::ssize_t{
 
         //这样
 
-
-        Ok(ret)
+        // 
+        warn!("ioctl:unimplemented,but ok!");
+        Ok(0)
     })
 }
 
 // /tools/include/uapi/asm-generic/ioctls.h
 //参考星绽
 #[repr(u32)]
-#[derive(Debug, Clone, Copy,TryFromPrimitive)]
+#[derive(Debug, Clone, Copy, TryFromPrimitive)]
 pub enum IoctlCmd {
     /// Get terminal attributes
     TCGETS = 0x5401,
