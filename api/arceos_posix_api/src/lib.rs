@@ -31,7 +31,7 @@ pub mod config {
 #[allow(dead_code, non_snake_case, non_camel_case_types, non_upper_case_globals, clippy::upper_case_acronyms, missing_docs)]
 pub mod ctypes;
 
-pub use imp::io::{sys_read, sys_readv, sys_write, sys_writev,sys_fsync,sys_ioctl};
+pub use imp::io::{sys_fsync, sys_ioctl, sys_read, sys_readv, sys_write, sys_writev};
 #[cfg(feature = "fs")]
 pub use imp::path_link::{AT_FDCWD, FilePath, HARDLINK_MANAGER, handle_file_path};
 pub use imp::resources::{sys_getrlimit, sys_setrlimit};
@@ -45,8 +45,8 @@ pub use imp::fd_ops::{
 };
 #[cfg(feature = "fs")]
 pub use imp::fs::{
-    Directory, File, sys_fstat, sys_getcwd, sys_lseek, sys_lstat, sys_open, sys_openat, sys_rename,
-    sys_stat,sys_ftruncate
+    Directory, File, sys_fstat, sys_ftruncate, sys_getcwd, sys_lseek, sys_lstat, sys_open,
+    sys_openat, sys_rename, sys_stat,
 };
 #[cfg(feature = "select")]
 pub use imp::io_mpx::sys_select;

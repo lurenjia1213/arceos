@@ -112,7 +112,6 @@ pub unsafe fn sys_fsync(fd: c_int) -> ctypes::ssize_t {
     })
 }
 
-
 use num_enum::TryFromPrimitive;
 pub unsafe fn sys_ioctl(fd: c_int, cmd: c_uint, arg: c_ulong) -> ctypes::ssize_t {
     debug!("ioctl");
@@ -164,7 +163,7 @@ pub unsafe fn sys_ioctl(fd: c_int, cmd: c_uint, arg: c_ulong) -> ctypes::ssize_t
 
         //这样
 
-        // 
+        //
         warn!("ioctl:unimplemented,but ok!");
         Ok(0)
     })

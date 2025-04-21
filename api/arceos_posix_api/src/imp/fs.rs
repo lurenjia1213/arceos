@@ -92,7 +92,6 @@ impl FileLike for File {
         self.inner.lock().flush()?;
         Ok(0)
     }
-
 }
 
 /// Convert open flags to [`OpenOptions`].
@@ -235,7 +234,7 @@ pub fn sys_lseek(fd: c_int, offset: ctypes::off_t, whence: c_int) -> ctypes::off
 /// Set the position of the file indicated by `fd`.
 ///
 /// Return its position after seek.
-pub fn sys_ftruncate(fd: c_int, size:u64) -> ctypes::off_t {
+pub fn sys_ftruncate(fd: c_int, size: u64) -> ctypes::off_t {
     debug!("sys_ftruncate fd:{fd},size:{size}");
     syscall_body!(sys_ftruncate, {
         //VFS api还是没看
