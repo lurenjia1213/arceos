@@ -70,7 +70,9 @@ impl Disk {
     pub fn write_one(&mut self, buf: &[u8]) -> DevResult<usize> {
         let write_size = if self.offset == 0 && buf.len() >= BLOCK_SIZE {
             // whole block
-            self.dev.write_block(self.block_id, &buf[0..BLOCK_SIZE])?;
+            /*地址转换的问题，参考axhal console read */
+            let kbuf = buf[0..BLOCK_SIZE].to_vec();
+            self.dev.write_block(self.block_id, &kbuf)?;
             self.block_id += 1;
             BLOCK_SIZE
         } else {
