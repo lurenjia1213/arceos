@@ -13,6 +13,10 @@ pub(crate) fn devfs() -> Arc<fs::devfs::DeviceFileSystem> {
     devfs.add("null", Arc::new(null));
     devfs.add("zero", Arc::new(zero));
     foo_dir.add("bar", Arc::new(bar));
+    //hwlock
+    let rtc = fs::devfs::ZeroDev;
+    let misc = devfs.mkdir("misc");
+    misc.add("rtc", Arc::new(rtc));
     Arc::new(devfs)
 }
 
@@ -43,7 +47,8 @@ pub(crate) fn procfs() -> VfsResult<Arc<fs::ramfs::RamFileSystem>> {
     // Create /proc/self/stat
     proc_root.create("self", VfsNodeType::Dir)?;
     proc_root.create("self/stat", VfsNodeType::File)?;
-
+    proc_root.create("mounts", VfsNodeType::File)?;
+    proc_root.create("meminfo", VfsNodeType::File)?;
     Ok(Arc::new(procfs))
 }
 

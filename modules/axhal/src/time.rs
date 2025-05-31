@@ -53,6 +53,7 @@ pub fn busy_wait(dur: Duration) {
 /// Busy waiting until reaching the given deadline.
 pub fn busy_wait_until(deadline: TimeValue) {
     while wall_time() < deadline {
+        info!("busy_wait for sleep");
         core::hint::spin_loop();
     }
 }
