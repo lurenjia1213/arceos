@@ -57,4 +57,4 @@ ctor_bare = "0.2"
 num_enum = {version="0.7.3",default-features = false}
 
 [build-dependencies]
-bindgen = { version = "0.69" }
+bindgen = { version = "0.71" }
