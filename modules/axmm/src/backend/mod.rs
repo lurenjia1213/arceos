@@ -7,6 +7,9 @@ use memory_set::MappingBackend;
 mod alloc;
 mod linear;
 
+mod share;
+use ::alloc::sync::Arc;
+use memory_addr::PhysAddr;
 /// A unified enum type for different memory mapping backends.
 ///
 /// Currently, two backends are implemented:
@@ -36,6 +39,10 @@ pub enum Backend {
         /// Whether to populate the physical frames when creating the mapping.
         populate: bool,
     },
+    Share {
+        /// Whether to populate the physical frames when creating the mapping.
+        pages: Arc<[PhysAddr]>, //多个进程共享，引用计数
+    },
 }
 
 impl MappingBackend for Backend {
@@ -46,6 +53,7 @@ impl MappingBackend for Backend {
         match *self {
             Self::Linear { pa_va_offset } => Self::map_linear(start, size, flags, pt, pa_va_offset),
             Self::Alloc { populate } => Self::map_alloc(start, size, flags, pt, populate),
+            Self::Share { ref pages } => Self::map_share(start, pages, flags, pt),
         }
     }
 
@@ -53,6 +61,7 @@ impl MappingBackend for Backend {
         match *self {
             Self::Linear { pa_va_offset } => Self::unmap_linear(start, size, pt, pa_va_offset),
             Self::Alloc { populate } => Self::unmap_alloc(start, size, pt, populate),
+            Self::Share { ref pages } => Self::unmap_share(start, pages, pt),
         }
     }
 
@@ -82,6 +91,7 @@ impl Backend {
             Self::Alloc { populate } => {
                 Self::handle_page_fault_alloc(vaddr, orig_flags, page_table, populate)
             }
+            Self::Share { .. } => false, // Linear mappings should not trigger page faults.
         }
     }
 }

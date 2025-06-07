@@ -18,6 +18,8 @@ pub struct AddrSpace {
     pt: PageTable,
 }
 
+use alloc::sync::Arc;
+
 impl AddrSpace {
     /// Returns the address space base.
     pub const fn base(&self) -> VirtAddr {
@@ -163,6 +165,33 @@ impl AddrSpace {
             .map(area, &mut self.pt, false)
             .map_err(mapping_err_to_ax_err)?;
         Ok(())
+    }
+
+    pub fn map_share(
+        &mut self,
+        start: VirtAddr,
+        size: usize,
+        flags: MappingFlags,
+        phys_pages: Option<Arc<[PhysAddr]>>,
+    ) -> AxResult<Arc<[PhysAddr]>> {
+        self.validate_region(start, size)?;
+
+        let area = MemoryArea::new(
+            start,
+            size,
+            flags,
+            Backend::new_share(size / PAGE_SIZE_4K, phys_pages),
+        );
+        let pages = if let Backend::Share { pages } = area.backend() {
+            pages.clone()
+        } else {
+            panic!("impossible");
+        };
+        self.areas
+            .map(area, &mut self.pt, false)
+            .map_err(mapping_err_to_ax_err)?;
+
+        Ok(pages)
     }
 
     /// Populates the area with physical frames, returning false if the area
@@ -379,13 +408,13 @@ impl AddrSpace {
         let result = self.pt.query(vaddr);
         match result {
             Ok((paddr, x, y)) => {
-                warn!(
+                debug!(
                     "Page fault at {:#x}, access_flags: {:#x?}, paddr: {:#x}",
                     vaddr, access_flags, paddr
                 );
             }
             Err(e) => {
-                warn!(
+                debug!(
                     "Page fault at {:#x}, access_flags: {:#x?}, error: {:?}",
                     vaddr, access_flags, e
                 );
