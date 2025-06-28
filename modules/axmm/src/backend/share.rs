@@ -32,6 +32,7 @@ impl Backend {
         let pages = if let Some(phys_pages) = phys_pages {
             phys_pages //有？直接返回
         } else {
+            //error!("alloc");
             Arc::from(
                 //没有？新建
                 (0..page_num)
@@ -65,7 +66,6 @@ impl Backend {
         true
     }
 
-    //存在内存泄露的问题，鬼知道这个玩意的引用什么时候消除？
     pub(crate) fn unmap_share(
         start: VirtAddr,
         pages: &Arc<[PhysAddr]>,
@@ -76,15 +76,21 @@ impl Backend {
             start,
             start + pages.len() * PAGE_SIZE_4K
         );
-        info!("ref count of alloced pages:{}", Arc::strong_count(pages));
-        for (i, _) in pages.iter().enumerate() {
+        let ref_count = Arc::strong_count(pages);
+        //error!("ref count of alloced pages:{}", ref_count);
+        for (i, pages) in pages.iter().enumerate() {
             let vaddr = start + i * PAGE_SIZE_4K;
             if let Ok((_, _, tlb)) = pt.unmap(vaddr) {
                 tlb.flush();
+                if ref_count == 1 {
+                    //error!("ref_count==1,dealloc");
+                    dealloc_frame(*pages);
+                }
             } else {
                 return false;
             }
         }
+
         true
     }
 

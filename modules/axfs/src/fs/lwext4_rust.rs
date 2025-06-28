@@ -12,6 +12,8 @@ use lwext4_rust::{Ext4BlockWrapper, Ext4File, InodeTypes, KernelDevOp};
 use crate::dev::Disk;
 pub const BLOCK_SIZE: usize = 512;
 
+use crate::alloc::string::ToString;
+
 #[allow(dead_code)]
 pub struct Ext4FileSystem {
     inner: Ext4BlockWrapper<Disk>,
@@ -316,7 +318,11 @@ impl VfsNodeOps for FileWrapper {
 
     fn rename(&self, src_path: &str, dst_path: &str) -> VfsResult {
         let mut file = self.0.lock();
-        file.file_rename(src_path, dst_path)
+        //ext4_frename error: rc = 2
+        //mv: can't rename 'test_dir': File exists
+        let src_path = "/".to_string() + src_path;
+        // panic!();
+        file.file_rename(&src_path, dst_path)
             .map(|_v| ())
             .map_err(|e| e.try_into().unwrap())
     }
