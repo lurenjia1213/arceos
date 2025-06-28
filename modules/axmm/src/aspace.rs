@@ -135,8 +135,8 @@ impl AddrSpace {
             return ax_err!(InvalidInput, "address not aligned");
         }
 
-        let offset = start_vaddr.as_usize() - start_paddr.as_usize();
-        let area = MemoryArea::new(start_vaddr, size, flags, Backend::new_linear(offset));
+        let offset = start_vaddr.as_usize().wrapping_sub(start_paddr.as_usize());
+        let area = MemoryArea::new(start_vaddr, size, flags, Backend::new_linear(offset)); //非线性转换，会导致溢出，但是没关系，这里只是用这个offset再恢复成原先的两个参数(物理地址与虚拟地址)，溢出其实无所谓
         self.areas
             .map(area, &mut self.pt, false)
             .map_err(mapping_err_to_ax_err)?;
