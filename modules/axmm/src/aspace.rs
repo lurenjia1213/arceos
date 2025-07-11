@@ -407,7 +407,7 @@ impl AddrSpace {
 
         let result = self.pt.query(vaddr);
         match result {
-            Ok((paddr, x, y)) => {
+            Ok((paddr, _x, _y)) => {
                 debug!(
                     "Page fault at {:#x}, access_flags: {:#x?}, paddr: {:#x}",
                     vaddr, access_flags, paddr

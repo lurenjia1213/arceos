@@ -9,9 +9,6 @@ pub use axfs::fops::FileType as AxFileType;
 pub use axfs::fops::OpenOptions as AxOpenOptions;
 pub use axio::SeekFrom as AxSeekFrom;
 
-#[cfg(feature = "myfs")]
-pub use axfs::fops::{Disk as AxDisk, MyFileSystemIf};
-
 /// A handle to an opened file.
 pub struct AxFileHandle(File);
 
