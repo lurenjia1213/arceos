@@ -1,6 +1,6 @@
 use core::fmt;
 
-use axerrno::{AxError, AxResult, ax_err};
+use axerrno::{AxError, AxResult, LinuxError, LinuxResult, ax_err};
 use axhal::mem::phys_to_virt;
 use axhal::paging::{MappingFlags, PageSize, PageTable, PagingError};
 use memory_addr::{MemoryAddr, PhysAddr, VirtAddr, VirtAddrRange, is_aligned};
@@ -67,6 +67,16 @@ impl AddrSpace {
             areas: MemorySet::new(),
             pt: PageTable::try_new().map_err(|_| AxError::NoMemory)?,
         })
+    }
+
+    ///通过虚拟地址，查询物理地址
+    pub fn query_paddr(&mut self, vaddr: VirtAddr) -> LinuxResult<PhysAddr> {
+        if let Ok(x) = self.pt.query(vaddr) {
+            let (paddr, _, _) = x;
+            Ok(paddr)
+        } else {
+            Err(LinuxError::EFAULT)
+        }
     }
 
     /// Copies page table mappings from another address space.
