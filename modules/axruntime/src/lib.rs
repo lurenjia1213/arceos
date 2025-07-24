@@ -173,6 +173,12 @@ pub extern "C" fn rust_main(cpu_id: usize, dtb: usize) -> ! {
                 mount.root_location(),
             )));
         }
+
+        #[cfg(feature = "net")]
+        axnet::init_network(all_devices.net);
+
+        #[cfg(feature = "display")]
+        axdisplay::init_display(all_devices.display);
     }
 
     #[cfg(feature = "smp")]
