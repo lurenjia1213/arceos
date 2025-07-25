@@ -1,4 +1,5 @@
 use core::cell::UnsafeCell;
+
 use core::net::SocketAddr;
 use core::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 
@@ -76,8 +77,9 @@ impl TcpSocket {
     /// [`Err(NotConnected)`](AxError::NotConnected) if not connected.
     #[inline]
     pub fn local_addr(&self) -> AxResult<SocketAddr> {
+        //通过bind指定端口？
         match self.get_state() {
-            STATE_CONNECTED | STATE_LISTENING => {
+            STATE_CONNECTED | STATE_LISTENING | STATE_CLOSED => {
                 Ok(into_core_sockaddr(unsafe { self.local_addr.get().read() }))
             }
             _ => Err(AxError::NotConnected),
@@ -127,7 +129,13 @@ impl TcpSocket {
             // TODO: check remote addr unreachable
             let remote_endpoint = from_core_sockaddr(remote_addr);
             let bound_endpoint = self.bound_endpoint()?;
-            let iface = &ETH0.iface;
+
+            let iface = if remote_addr.ip().is_loopback() {
+                super::LOOPBACK.get().unwrap() //在smoltcp眼里，其实这就是两个网卡，不知道是否是回环，交叉引用是个好东西
+            } else {
+                &super::ETH0.iface
+            };
+
             let (local_endpoint, remote_endpoint) = SOCKET_SET
                 .with_socket_mut::<tcp::Socket, _, _>(handle, |socket| {
                     socket
@@ -137,6 +145,7 @@ impl TcpSocket {
                                 ax_err!(BadState, "socket connect() failed")
                             }
                             ConnectError::Unaddressable => {
+                                //error!("fuck");
                                 ax_err!(ConnectionRefused, "socket connect() failed")
                             }
                         })?;
@@ -145,6 +154,7 @@ impl TcpSocket {
                         socket.remote_endpoint().unwrap(),
                     ))
                 })?;
+
             unsafe {
                 // SAFETY: no other threads can read or write these fields as we
                 // have changed the state to `BUSY`.
@@ -152,12 +162,14 @@ impl TcpSocket {
                 self.peer_addr.get().write(remote_endpoint);
                 self.handle.get().write(Some(handle));
             }
+
             Ok(())
         })
         .unwrap_or_else(|_| ax_err!(AlreadyExists, "socket connect() failed: already connected"))?; // EISCONN
-
+        //?
         // Here our state must be `CONNECTING`, and only one thread can run here.
         if self.is_nonblocking() {
+            //error!("debug connect AxError::WouldBlock");
             Err(AxError::WouldBlock)
         } else {
             self.block_on(|| {
@@ -229,7 +241,9 @@ impl TcpSocket {
 
         // SAFETY: `self.local_addr` should be initialized after `bind()`.
         let local_port = unsafe { self.local_addr.get().read().port };
+        //又是在这里被阻塞
         self.block_on(|| {
+            //error!("accept???");
             let (handle, (local_addr, peer_addr)) = LISTEN_TABLE.accept(local_port)?;
             debug!("TCP socket accepted a new connection {}", peer_addr);
             Ok(TcpSocket::new_connected(handle, local_addr, peer_addr))

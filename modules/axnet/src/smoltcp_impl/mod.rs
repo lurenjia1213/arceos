@@ -2,6 +2,7 @@ mod addr;
 mod bench;
 mod dns;
 mod listen_table;
+mod loopback;
 mod tcp;
 mod udp;
 
@@ -19,6 +20,8 @@ use smoltcp::phy::{Device, DeviceCapabilities, Medium, RxToken, TxToken};
 use smoltcp::socket::{self, AnySocket};
 use smoltcp::time::Instant;
 use smoltcp::wire::{EthernetAddress, HardwareAddress, IpAddress, IpCidr};
+
+use crate::smoltcp_impl::loopback::LBDEV;
 
 use self::listen_table::ListenTable;
 
@@ -121,6 +124,11 @@ impl<'a> SocketSetWrapper<'a> {
 
     pub fn poll_interfaces(&self) {
         ETH0.poll(&self.0);
+        LOOPBACK.lock().poll(
+            Instant::from_micros_const((0 / NANOS_PER_MICROS) as i64),
+            LOOPBACK_DEV.lock().deref_mut(),
+            &mut self.0.lock(),
+        );
     }
 
     pub fn remove(&self, handle: SocketHandle) {
@@ -315,8 +323,24 @@ pub fn bench_transmit() {
 pub fn bench_receive() {
     ETH0.dev.lock().bench_receive_bandwidth();
 }
-
+static LOOPBACK_DEV: LazyInit<Mutex<LBDEV>> = LazyInit::new();
+static LOOPBACK: LazyInit<Mutex<Interface>> = LazyInit::new();
 pub(crate) fn init(net_dev: AxNetDevice) {
+    let mut loopback_dev = LBDEV::new();
+    let lbconfig = Config::new(smoltcp::wire::HardwareAddress::Ip);
+    let mut lbiface = Interface::new(
+        lbconfig,
+        &mut loopback_dev,
+        Instant::from_micros_const((0 / NANOS_PER_MICROS) as i64),
+    );
+    lbiface.update_ip_addrs(|ip_addrs| {
+        ip_addrs
+            .push(IpCidr::new(IpAddress::v4(127, 0, 0, 1), 8))
+            .unwrap();
+    });
+    LOOPBACK.init_once(Mutex::new(lbiface));
+    LOOPBACK_DEV.init_once(Mutex::new(loopback_dev));
+
     let ether_addr = EthernetAddress(net_dev.mac_address().0);
     let eth0 = InterfaceWrapper::new("eth0", net_dev, ether_addr);
 

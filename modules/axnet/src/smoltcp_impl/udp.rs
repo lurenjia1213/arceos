@@ -77,6 +77,7 @@ impl UdpSocket {
         let mut self_local_addr = self.local_addr.write();
 
         if local_addr.port() == 0 {
+            //error!("port set by kernel");get_status
             local_addr.set_port(get_ephemeral_port()?);
         }
         if self_local_addr.is_some() {

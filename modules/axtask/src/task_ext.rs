@@ -199,3 +199,10 @@ macro_rules! def_task_ext {
         }
     };
 }
+
+#[crate_interface::def_interface]
+pub trait AxTaskExtIf {
+    fn switch_to_task();
+    fn switch_from_task();
+    fn update_realtime();
+}
