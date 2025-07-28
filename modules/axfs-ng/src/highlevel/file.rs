@@ -389,8 +389,10 @@ impl<M: RawMutex> axio::Write for File<M> {
         Ok(())
     }
 }
+///通过引用发现，这个地方只有lseek与copy_file_range有用到
 impl<M: RawMutex> axio::Seek for File<M> {
     fn seek(&mut self, pos: SeekFrom) -> axio::Result<u64> {
+        //error!("current pos:{}", self.position);
         let new_pos = (|| {
             Ok(match pos {
                 SeekFrom::Start(pos) => pos,
@@ -401,16 +403,18 @@ impl<M: RawMutex> axio::Seek for File<M> {
                         .clamp(0, size)
                 }
                 SeekFrom::Current(off) => {
-                    let size = self.access(FileFlags::empty())?.len()?;
+                    //let size = self.access(FileFlags::empty())?.len()?;
+                    //error!("file size:{size}");
                     self.position
                         .checked_add_signed(off)
                         .ok_or(VfsError::EINVAL)?
-                        .clamp(0, size)
+                    //.clamp(0, size)
                 }
             })
         })()
         .map_err(vfs_error_to_axio)?;
         self.position = new_pos;
+        //error!("current pos set to:{}", self.position);
         Ok(new_pos)
     }
 }
