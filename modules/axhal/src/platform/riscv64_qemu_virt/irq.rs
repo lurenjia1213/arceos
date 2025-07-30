@@ -7,12 +7,14 @@ use riscv::register::sie;
 /// `Interrupt` bit in `scause`
 pub(super) const INTC_IRQ_BASE: usize = 1 << (usize::BITS - 1);
 
+//S_SOFT,S_TIMER来自于clint
 /// Supervisor software interrupt in `scause`
 #[allow(unused)]
 pub(super) const S_SOFT: usize = INTC_IRQ_BASE + 1;
 
 /// Supervisor timer interrupt in `scause`
 pub(super) const S_TIMER: usize = INTC_IRQ_BASE + 5;
+//以上来自clint
 
 /// Supervisor external interrupt in `scause`
 pub(super) const S_EXT: usize = INTC_IRQ_BASE + 9;

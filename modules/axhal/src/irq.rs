@@ -1,5 +1,7 @@
 //! Interrupt management.
 
+use core::sync::atomic::{AtomicU32, Ordering};
+
 use handler_table::HandlerTable;
 
 use crate::platform::irq::{MAX_IRQ_COUNT, dispatch_irq};
@@ -11,6 +13,8 @@ pub use crate::platform::irq::{register_handler, set_enable};
 pub type IrqHandler = handler_table::Handler;
 
 static IRQ_HANDLER_TABLE: HandlerTable<MAX_IRQ_COUNT> = HandlerTable::new();
+
+pub static IRQ_STATISTICS: [AtomicU32; 512] = [const { AtomicU32::new(0) }; 512];
 
 /// Platform-independent IRQ dispatching.
 #[allow(dead_code)]
@@ -38,6 +42,8 @@ pub(crate) fn register_handler_common(irq_num: usize, handler: IrqHandler) -> bo
 #[register_trap_handler(IRQ)]
 fn handler_irq(irq_num: usize) -> bool {
     let guard = kernel_guard::NoPreempt::new();
+    ///为什么%512?因为riscv scause.bits()
+    IRQ_STATISTICS[irq_num % 512].fetch_add(1, Ordering::Relaxed);
     dispatch_irq(irq_num);
     drop(guard); // rescheduling may occur when preemption is re-enabled.
     true
