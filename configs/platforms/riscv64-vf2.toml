@@ -11,13 +11,13 @@ platform = "riscv64-vf2"      # str
 family = "riscv64-vf2"        # str
 
 # Base address of the whole physical memory.
-phys-memory-base = 0x8000_0000      # uint
+phys-memory-base = 0x4000_0000      # uint
 # Size of the whole physical memory. (1G)
 phys-memory-size = 0x4000_0000      # uint
 # Base physical address of the kernel image.
-kernel-base-paddr = 0x8020_0000     # uint
+kernel-base-paddr = 0x4020_0000     # uint
 # Base virtual address of the kernel image.
-kernel-base-vaddr = "0xffff_ffc0_8020_0000"     # uint
+kernel-base-vaddr = "0xffff_ffc0_4020_0000"     # uint
 # Linear mapping offset, for quick conversions between physical and virtual
 # addresses.
 phys-virt-offset = "0xffff_ffc0_0000_0000"      # uint
