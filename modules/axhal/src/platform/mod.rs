@@ -10,6 +10,9 @@ cfg_if::cfg_if! {
     if #[cfg(all(target_arch = "x86_64", platform_family = "x86-pc"))] {
         mod x86_pc;
         pub use self::x86_pc::*;
+    } else if #[cfg(all(target_arch = "riscv64", platform_family = "riscv64-vf2"))] {
+        mod riscv64_vf2;
+        pub use self::riscv64_vf2::*;
     } else if #[cfg(all(target_arch = "riscv64", platform_family = "riscv64-qemu-virt"))] {
         mod riscv64_qemu_virt;
         pub use self::riscv64_qemu_virt::*;

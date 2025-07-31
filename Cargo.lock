@@ -465,6 +465,7 @@ dependencies = [
  "axlog",
  "bitflags 2.9.1",
  "cfg-if",
+ "chrono",
  "dw_apb_uart",
  "handler_table",
  "int_ratio",
@@ -1327,7 +1328,6 @@ dependencies = [
 [[package]]
 name = "lwext4_rust"
 version = "0.2.0"
-source = "git+https://github.com/Mivik/lwext4_rust?rev=ebd38f6#ebd38f6f8f9f098ab84081ec0f4a8cc25adcdb0c"
 dependencies = [
  "bindgen",
  "lock_api",
