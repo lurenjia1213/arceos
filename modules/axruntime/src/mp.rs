@@ -11,18 +11,38 @@ static ENTERED_CPUS: AtomicUsize = AtomicUsize::new(1);
 #[allow(clippy::absurd_extreme_comparisons)]
 pub fn start_secondary_cpus(primary_cpu_id: usize) {
     let mut logic_cpu_id = 0;
-    for i in 0..SMP {
-        if i != primary_cpu_id && logic_cpu_id < SMP - 1 {
-            let stack_top = virt_to_phys(VirtAddr::from(unsafe {
-                SECONDARY_BOOT_STACK[logic_cpu_id].as_ptr_range().end as usize
-            }));
 
-            debug!("starting CPU {}...", i);
-            axhal::mp::start_secondary_cpu(i, stack_top);
-            logic_cpu_id += 1;
+    if axconfig::PLATFORM == "riscv64-vf2" {
+        info!("multi core on vf2");
+        for i in 1..=SMP {
+            if i != primary_cpu_id && logic_cpu_id < SMP - 1 {
+                let stack_top = virt_to_phys(VirtAddr::from(unsafe {
+                    SECONDARY_BOOT_STACK[logic_cpu_id].as_ptr_range().end as usize
+                }));
 
-            while ENTERED_CPUS.load(Ordering::Acquire) <= logic_cpu_id {
-                core::hint::spin_loop();
+                debug!("starting CPU {}...", i);
+                axhal::mp::start_secondary_cpu(i, stack_top);
+                logic_cpu_id += 1;
+
+                while ENTERED_CPUS.load(Ordering::Acquire) <= logic_cpu_id {
+                    core::hint::spin_loop();
+                }
+            }
+        }
+    } else {
+        for i in 0..SMP {
+            if i != primary_cpu_id && logic_cpu_id < SMP - 1 {
+                let stack_top = virt_to_phys(VirtAddr::from(unsafe {
+                    SECONDARY_BOOT_STACK[logic_cpu_id].as_ptr_range().end as usize
+                }));
+
+                debug!("starting CPU {}...", i);
+                axhal::mp::start_secondary_cpu(i, stack_top);
+                logic_cpu_id += 1;
+
+                while ENTERED_CPUS.load(Ordering::Acquire) <= logic_cpu_id {
+                    core::hint::spin_loop();
+                }
             }
         }
     }
