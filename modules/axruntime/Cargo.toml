@@ -45,3 +45,5 @@ ctor_bare = "0.2"
 
 chrono = { version = "0.4.38", default-features = false }
 cfg-if = "1.0"
+[build-dependencies]
+axconfig = { workspace = true }

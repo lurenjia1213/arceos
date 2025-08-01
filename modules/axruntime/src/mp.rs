@@ -11,9 +11,10 @@ static ENTERED_CPUS: AtomicUsize = AtomicUsize::new(1);
 #[allow(clippy::absurd_extreme_comparisons)]
 pub fn start_secondary_cpus(primary_cpu_id: usize) {
     let mut logic_cpu_id = 0;
-
-    if axconfig::PLATFORM == "riscv64-vf2" {
+    cfg_if::cfg_if! {
+    if #[cfg(all(target_arch = "riscv64", platform_family = "riscv64-vf2"))] {
         info!("multi core on vf2");
+        //E24，除了starfive提供的系统，其他没用上
         for i in 1..=SMP {
             if i != primary_cpu_id && logic_cpu_id < SMP - 1 {
                 let stack_top = virt_to_phys(VirtAddr::from(unsafe {
@@ -30,6 +31,7 @@ pub fn start_secondary_cpus(primary_cpu_id: usize) {
             }
         }
     } else {
+
         for i in 0..SMP {
             if i != primary_cpu_id && logic_cpu_id < SMP - 1 {
                 let stack_top = virt_to_phys(VirtAddr::from(unsafe {
@@ -45,7 +47,7 @@ pub fn start_secondary_cpus(primary_cpu_id: usize) {
                 }
             }
         }
-    }
+    }}
 }
 
 /// The main entry point of the ArceOS runtime for secondary CPUs.
