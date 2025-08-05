@@ -166,7 +166,6 @@ impl TcpSocket {
             Ok(())
         })
         .unwrap_or_else(|_| ax_err!(AlreadyExists, "socket connect() failed: already connected"))?; // EISCONN
-
         //?
         // Here our state must be `CONNECTING`, and only one thread can run here.
         if self.is_nonblocking() {
