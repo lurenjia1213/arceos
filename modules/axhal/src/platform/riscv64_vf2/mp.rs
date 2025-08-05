@@ -5,6 +5,8 @@ pub fn start_secondary_cpu(hartid: usize, stack_top: PhysAddr) {
     unsafe extern "C" {
         fn _start_secondary();
     }
+    //cpuid+1=hartid
+    let hartid = hartid + 1;
     if sbi_rt::probe_extension(sbi_rt::Hsm).is_unavailable() {
         warn!("HSM SBI extension is not supported for current SEE.");
         return;

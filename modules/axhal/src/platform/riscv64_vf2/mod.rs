@@ -18,6 +18,7 @@ unsafe extern "C" {
 }
 
 unsafe extern "C" fn rust_entry(cpu_id: usize, dtb: usize) {
+    let cpu_id = cpu_id - 1; //hardid:1,因为0号不用。我们把hart-1
     crate::mem::clear_bss();
     crate::cpu::init_primary(cpu_id);
     #[cfg(feature = "uspace")]
@@ -28,6 +29,7 @@ unsafe extern "C" fn rust_entry(cpu_id: usize, dtb: usize) {
 
 #[cfg(feature = "smp")]
 unsafe extern "C" fn rust_entry_secondary(cpu_id: usize) {
+    let cpu_id = cpu_id - 1;
     crate::cpu::init_secondary(cpu_id);
     #[cfg(feature = "uspace")]
     riscv::register::sstatus::set_sum();
