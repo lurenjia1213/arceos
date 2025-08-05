@@ -119,7 +119,8 @@ pub(crate) fn default_mmio_regions() -> impl Iterator<Item = MemRegion> {
         flags: MemRegionFlags::RESERVED
             | MemRegionFlags::DEVICE
             | MemRegionFlags::READ
-            | MemRegionFlags::WRITE,
+            | MemRegionFlags::WRITE
+            | MemRegionFlags::UNCACHED,
         name: "mmio",
     })
 }

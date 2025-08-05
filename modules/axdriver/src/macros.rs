@@ -69,5 +69,11 @@ macro_rules! for_each_drivers {
             type $drv_type = crate::drivers::FXmacDriver;
             $code
         }
+        #[cfg(block_dev = "visionfive2-sd")]
+        {
+            //compile_error!("VisionFive2 SD driver is enabled!");
+            type $drv_type = crate::drivers::Vf2SdDriver;
+            $code
+        }
     }};
 }

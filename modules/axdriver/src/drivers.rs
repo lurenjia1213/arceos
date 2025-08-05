@@ -80,6 +80,75 @@ cfg_if::cfg_if! {
         }
     }
 }
+cfg_if::cfg_if! {
+    if #[cfg(block_dev = "visionfive2-sd")] {
+
+    use axdriver_block::visionfive2::{SDHCIDriver, SDIo, SleepOps};
+// 这里需要实现具体的SDIo和SleepOps trait
+    pub struct Vf2SdIo;
+    pub struct Vf2Sleep;
+    pub const SDIO_PBASE:usize= 0x16020000;
+    use axhal::mem::phys_to_virt;
+    //pub const SDIO_BASE: usize=axhal::mem::phys_to_virt(SDIO_PBASE.into()).as_usize();
+    impl SDIo for Vf2SdIo {
+        // 实现SDIo trait方法
+        fn read_reg_at(&self, offset: usize) -> u32 {
+            let addr = (phys_to_virt(SDIO_PBASE.into()).as_usize() + offset) as *mut u32;
+            unsafe { addr.read_volatile() }
+        }
+        fn write_reg_at(&mut self, offset: usize, val: u32) {
+            let addr = (phys_to_virt(SDIO_PBASE.into()).as_usize() + offset) as *mut u32;
+            unsafe { addr.write_volatile(val) }
+        }
+        fn read_data_at(&self, offset: usize) -> u64 {
+            let addr = (phys_to_virt(SDIO_PBASE.into()).as_usize() + offset) as *mut u64;
+            unsafe { addr.read_volatile() }
+        }
+        fn write_data_at(&mut self, offset: usize, val: u64) {
+            let addr = (phys_to_virt(SDIO_PBASE.into()).as_usize() + offset) as *mut u64;
+            unsafe { addr.write_volatile(val) }
+        }
+    }
+
+
+
+        impl SleepOps for Vf2Sleep {
+
+        fn sleep_ms(ms: usize) {
+            // 实现简单的忙等待
+            use core::time::Duration;
+            use axhal::time::{wall_time, busy_wait_until};
+            let duration = Duration::from_millis(ms as _);
+            let deadline = wall_time() + duration;
+            busy_wait_until(deadline);
+
+        }
+        fn sleep_ms_until(ms: usize, mut f: impl FnMut() -> bool) {
+            use core::time::Duration;
+            use axhal::time::{wall_time, busy_wait_until};
+            let duration = Duration::from_millis(ms as _);
+            let deadline = wall_time() + duration;
+            while wall_time() < deadline {
+                if f(){
+                    break;
+                }
+                core::hint::spin_loop();
+            }
+        }
+    }
+    pub struct Vf2SdDriver;
+    register_block_driver!(Vf2SdDriver, axdriver_block::visionfive2::SDHCIDriver<Vf2SdIo, Vf2Sleep>);
+        impl DriverProbe for Vf2SdDriver {
+            fn probe_global() -> Option<AxDeviceEnum> {
+                debug!("visionfive2 sd probe");
+
+                SDHCIDriver::try_new(Vf2SdIo, Vf2Sleep)
+                    .ok()
+                    .map(AxDeviceEnum::from_block)
+            }
+        }
+    }
+}
 
 cfg_if::cfg_if! {
     if #[cfg(net_dev = "ixgbe")] {
