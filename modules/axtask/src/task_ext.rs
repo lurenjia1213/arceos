@@ -204,5 +204,4 @@ macro_rules! def_task_ext {
 pub trait AxTaskExtIf {
     fn switch_to_task();
     fn switch_from_task();
-    fn update_realtime();
 }

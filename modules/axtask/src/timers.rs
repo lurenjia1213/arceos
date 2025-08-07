@@ -1,3 +1,4 @@
+use alloc::boxed::Box;
 use core::sync::atomic::{AtomicU64, Ordering};
 
 use kernel_guard::NoOp;
@@ -11,10 +12,28 @@ use crate::{AxTaskRef, select_run_queue};
 static TIMER_TICKET_ID: AtomicU64 = AtomicU64::new(1);
 
 percpu_static! {
-    TIMER_LIST: LazyInit<TimerList<TaskWakeupEvent>> = LazyInit::new(),
+    TIMER_LIST: LazyInit<TimerList<TimerEventType>> = LazyInit::new(),
 }
 
-struct TaskWakeupEvent {
+/// Timer event types that can be scheduled
+pub enum TimerEventType {
+    /// Wake up a task
+    TaskWakeup(TaskWakeupEvent),
+    /// Execute a callback function
+    Callback(TimerCallbackEvent),
+}
+
+impl TimerEvent for TimerEventType {
+    fn callback(self, now: TimeValue) {
+        match self {
+            TimerEventType::TaskWakeup(event) => event.callback(now),
+            TimerEventType::Callback(event) => event.callback(now),
+        }
+    }
+}
+
+/// Original task wakeup event
+pub struct TaskWakeupEvent {
     ticket_id: u64,
     task: AxTaskRef,
 }
@@ -35,14 +54,44 @@ impl TimerEvent for TaskWakeupEvent {
     }
 }
 
+/// Timer callback event that executes a function
+pub struct TimerCallbackEvent {
+    callback: Box<dyn FnOnce() + Send + 'static>,
+}
+
+impl TimerEvent for TimerCallbackEvent {
+    fn callback(self, _now: TimeValue) {
+        // Execute the callback function
+        (self.callback)();
+    }
+}
+
+/// Set a timer to wake up a task at the specified deadline
 pub fn set_alarm_wakeup(deadline: TimeValue, task: AxTaskRef) {
     TIMER_LIST.with_current(|timer_list| {
         let ticket_id = TIMER_TICKET_ID.fetch_add(1, Ordering::AcqRel);
         task.set_timer_ticket(ticket_id);
-        timer_list.set(deadline, TaskWakeupEvent { ticket_id, task });
+        timer_list.set(
+            deadline,
+            TimerEventType::TaskWakeup(TaskWakeupEvent { ticket_id, task }),
+        );
     })
 }
 
+/// Set a timer to execute a callback function at the specified deadline
+pub fn set_alarm_callback<F>(deadline: TimeValue, callback: F)
+where
+    F: FnOnce() + Send + 'static,
+{
+    TIMER_LIST.with_current(|timer_list| {
+        let callback_event = TimerCallbackEvent {
+            callback: Box::new(callback),
+        };
+        timer_list.set(deadline, TimerEventType::Callback(callback_event));
+    })
+}
+
+/// Check and process expired timer events
 pub fn check_events() {
     loop {
         let now = wall_time();
@@ -59,6 +108,7 @@ pub fn check_events() {
     }
 }
 
+/// Initialize the per-CPU timer list
 pub fn init() {
     TIMER_LIST.with_current(|timer_list| {
         timer_list.init_once(TimerList::new());

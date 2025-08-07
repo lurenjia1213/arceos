@@ -16,6 +16,10 @@ pub use crate::task_ext::{AxTaskExtIf, TaskExtMut, TaskExtRef};
 #[doc(cfg(feature = "multitask"))]
 pub use crate::wait_queue::WaitQueue;
 
+#[cfg(feature = "irq")]
+#[doc(cfg(feature = "irq"))]
+pub use crate::timers::{set_alarm_callback, set_alarm_wakeup};
+
 /// The reference type of a task.
 pub type AxTaskRef = Arc<AxTask>;
 
