@@ -57,7 +57,8 @@ pci-ranges = [
 ]                                   # [(uint, uint)]
 
 # Timer interrupt frequency in Hz.
-timer-frequency = 10_000_000        # uint
+timer-frequency = 4000000        # uint
+
 
 # rtc@101000 {
 #     interrupts = <0x0b>;
