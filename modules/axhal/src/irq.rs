@@ -42,7 +42,7 @@ pub(crate) fn register_handler_common(irq_num: usize, handler: IrqHandler) -> bo
 #[register_trap_handler(IRQ)]
 fn handler_irq(irq_num: usize) -> bool {
     let guard = kernel_guard::NoPreempt::new();
-    ///为什么%512?因为riscv scause.bits()
+    //为什么%512? riscv scause.bits()
     IRQ_STATISTICS[irq_num % 512].fetch_add(1, Ordering::Relaxed);
     dispatch_irq(irq_num);
     drop(guard); // rescheduling may occur when preemption is re-enabled.

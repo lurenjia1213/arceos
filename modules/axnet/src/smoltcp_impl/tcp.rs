@@ -145,7 +145,7 @@ impl TcpSocket {
                                 ax_err!(BadState, "socket connect() failed")
                             }
                             ConnectError::Unaddressable => {
-                                //error!("fuck");
+                                
                                 ax_err!(ConnectionRefused, "socket connect() failed")
                             }
                         })?;
