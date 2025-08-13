@@ -263,7 +263,7 @@ pub struct File<M> {
     position: u64,
 }
 impl<M: RawMutex> File<M> {
-    pub(crate) fn new(inner: Location<M>, flags: FileFlags) -> Self {
+    pub fn new(inner: Location<M>, flags: FileFlags) -> Self {
         Self {
             inner,
             flags,
