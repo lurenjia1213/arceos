@@ -12,12 +12,16 @@ static mut BOOT_PT_L0: [LA64PTE; 512] = [LA64PTE::empty(); 512];
 
 #[unsafe(link_section = ".data.boot_page_table")]
 static mut BOOT_PT_L1: [LA64PTE; 512] = [LA64PTE::empty(); 512];
-
+/*
+DRAM bank   = 0x0000000000000001
+-> start    = 0x9000000090000000
+-> size     = 0x0000000070000000
+*/
 unsafe fn init_boot_page_table() {
     unsafe {
         let l1_va = va!(&raw const BOOT_PT_L1 as usize);
         // 0x0000_0000_0000 ~ 0x0080_0000_0000, table
-        BOOT_PT_L0[0x100] = LA64PTE::new_table(crate::mem::virt_to_phys(l1_va));
+        BOOT_PT_L0[0] = LA64PTE::new_table(crate::mem::virt_to_phys(l1_va));
         // 0x0000_0000..0x4000_0000, VPWXGD, 1G block
         BOOT_PT_L1[0] = LA64PTE::new_page(
             pa!(0),
@@ -25,6 +29,7 @@ unsafe fn init_boot_page_table() {
             true,
         );
         // 0x8000_0000..0xc000_0000, VPWXGD, 1G block
+        //这个玩意是3a平台上的？
         BOOT_PT_L1[2] = LA64PTE::new_page(
             pa!(0x8000_0000),
             MappingFlags::READ | MappingFlags::WRITE | MappingFlags::EXECUTE,
@@ -43,6 +48,8 @@ unsafe fn init_mmu() {
     crmd::set_pg(true);
 }
 
+//mw.b 0x1FE20000 0x41 1
+
 /// The earliest entry point for the primary CPU.
 ///
 /// We can't use bl to jump to higher address, so we use jirl to jump to higher address.
@@ -51,6 +58,11 @@ unsafe fn init_mmu() {
 #[unsafe(link_section = ".text.boot")]
 unsafe extern "C" fn _start() -> ! {
     core::arch::naked_asm!("
+        #check boot
+        li.d  $t0, 0x800000001fe20000
+        li.w $t2, 0x48
+        st.b $t2, $t0,0
+
         ori         $t0, $zero, 0x1     # CSR_DMW1_PLV0
         lu52i.d     $t0, $t0, -2048     # UC, PLV0, 0x8000 xxxx xxxx xxxx
         csrwr       $t0, 0x180          # LOONGARCH_CSR_DMWIN0
