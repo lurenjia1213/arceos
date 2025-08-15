@@ -60,24 +60,64 @@ unsafe extern "C" fn _start() -> ! {
     core::arch::naked_asm!("
         #check boot
         li.d  $t0, 0x800000001fe20000
-        li.w $t2, 0x48
+        li.w $t2, 0x48  #H
         st.b $t2, $t0,0
 
-        ori         $t0, $zero, 0x1     # CSR_DMW1_PLV0
-        lu52i.d     $t0, $t0, -2048     # UC, PLV0, 0x8000 xxxx xxxx xxxx
-        csrwr       $t0, 0x180          # LOONGARCH_CSR_DMWIN0
-        ori         $t0, $zero, 0x11    # CSR_DMW1_MAT | CSR_DMW1_PLV0
-        lu52i.d     $t0, $t0, -1792     # CA, PLV0, 0x9000 xxxx xxxx xxxx
-        csrwr       $t0, 0x181          # LOONGARCH_CSR_DMWIN1
+        li.d  $t0, 0xffff000000000011
+        csrwr       $t0, 0x180
+        #0xffff跳转
+        li.d  $t0, 0x9000000000000011
+        csrwr       $t0, 0x181
+        #0x9000跳转
+
+        li.d  $t0, 0x8000000000000001
+        csrwr       $t0, 0x182
+        #0x8000
+        li.d  $t0, 0xdddd000000000001
+        csrwr       $t0, 0x183
+        #0xdddd
+
+        li.d  $t0, 0xdddd00001fe20000
+        li.w $t2, 0x49 #i
+        st.b $t2, $t0,0
+
+        li.d  $t0, 0xdddd00001fe20000
+        li.w $t2, 0x49 #i
+        st.b $t2, $t0,0
+
+        #ori         $t0, $zero, 0x1     # CSR_DMW1_PLV0
+        #lu52i.d     $t0, $t0, -2048     # UC, PLV0, 0x8000 xxxx xxxx xxxx
+        #csrwr       $t0, 0x180          # LOONGARCH_CSR_DMWIN0
+        
+        #ori         $t0, $zero, 0x11    # CSR_DMW1_MAT | CSR_DMW1_PLV0
+        #lu52i.d     $t0, $t0, -1792     # CA, PLV0, 0x9000 xxxx xxxx xxxx
+        #csrwr       $t0, 0x181          # LOONGARCH_CSR_DMWIN1
 
         # Setup Stack
         la.global   $sp, {boot_stack}
         li.d        $t0, {boot_stack_size}
         add.d       $sp, $sp, $t0       # setup boot stack
+        li.d  $t0, 0xdddd00001fe20000
+        li.w $t2, 0x50 #j
+        st.b $t2, $t0,0
+        st.b $t2, $t0,0
+
+
 
         # Init MMU
         bl          {init_boot_page_table}
+
+        li.d  $t0, 0xdddd00001fe20000
+        li.w $t2, 0x51 #k
+        st.b $t2, $t0,0
+
         bl          {init_mmu}          # setup boot page table and enabel MMU
+
+
+        li.d  $t0, 0xdddd00001fe20000
+        li.w $t2, 0x51 #k
+        st.b $t2, $t0,0
+
 
         csrrd       $a0, 0x20           # cpuid
         la.global   $t0, {entry}
@@ -97,12 +137,30 @@ unsafe extern "C" fn _start() -> ! {
 #[unsafe(link_section = ".text.boot")]
 unsafe extern "C" fn _start_secondary() -> ! {
     core::arch::naked_asm!("
-        ori          $t0, $zero, 0x1     # CSR_DMW1_PLV0
-        lu52i.d      $t0, $t0, -2048     # UC, PLV0, 0x8000 xxxx xxxx xxxx
-        csrwr        $t0, 0x180          # LOONGARCH_CSR_DMWIN0
-        ori          $t0, $zero, 0x11    # CSR_DMW1_MAT | CSR_DMW1_PLV0
-        lu52i.d      $t0, $t0, -1792     # CA, PLV0, 0x9000 xxxx xxxx xxxx
-        csrwr        $t0, 0x181          # LOONGARCH_CSR_DMWIN1
+
+
+        li.d  $t0, 0xffff000000000011
+        csrwr       $t0, 0x180
+        #0xffff跳转
+        li.d  $t0, 0x9000000000000011
+        csrwr       $t0, 0x181
+        #0x9000跳转
+
+        li.d  $t0, 0x8000000000000001
+        csrwr       $t0, 0x182
+        #0x8000
+        li.d  $t0, 0xdddd000000000001
+        csrwr       $t0, 0x183
+        #0xdddd
+
+
+        #ori          $t0, $zero, 0x1     # CSR_DMW1_PLV0
+        #lu52i.d      $t0, $t0, -2048     # UC, PLV0, 0x8000 xxxx xxxx xxxx
+        #csrwr        $t0, 0x180          # LOONGARCH_CSR_DMWIN0
+        #ori          $t0, $zero, 0x11    # CSR_DMW1_MAT | CSR_DMW1_PLV0
+        #lu52i.d      $t0, $t0, -1792     # CA, PLV0, 0x9000 xxxx xxxx xxxx
+        #csrwr        $t0, 0x181          # LOONGARCH_CSR_DMWIN1
+        
         la.abs       $t0, {sm_boot_stack_top}
         ld.d         $sp, $t0,0          # read boot stack top
 
